@@ -1,4 +1,6 @@
-﻿using ADSProject.Repository;
+﻿using ADSProject.Models;
+using ADSProject.Repository;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -21,9 +23,52 @@ namespace ADSProject.Controllers
             this.grupoRepository = grupoRepository;
         }
 
-        public IActionResult Index()
+
+        [HttpGet]
+        public ActionResult Form(int idGrupo)
+        {
+            var estudiantes = estudianteRepository.obtenerEstudiantes();
+
+            estudiantes.ForEach(x => x.nombresEstudiante = x.nombresEstudiante + " " + x.apellidosEstudiante);
+
+            ViewBag.estudiantes = estudiantes;
+
+            var grupos = new GrupoViewModel();
+
+
+            grupos = grupoRepository.obtenerGrupoPorID(idGrupo, new string[]
+            {
+                "Carreras", "Profesores", "Materias", "AsignacionGrupos", "AsignacionGrupos.Estudiantes"
+            });
+
+
+
+            return View(grupos);
+        }
+
+        [HttpPost]
+        public ActionResult Form(GrupoViewModel grupoViewModel)
+        {
+            try
+            {
+                asignacionGrupoRepository.agregarAsignacionGrupo(grupoViewModel);
+
+                return StatusCode(StatusCodes.Status200OK);
+            }
+            catch (Exception)
+            {
+                /// Se retorna una respuesta Http (en este caso un error interno).
+
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+        }
+       /* public IActionResult Index()
         {
             return View();
         }
+       */
+        
+
+
     }
 }
