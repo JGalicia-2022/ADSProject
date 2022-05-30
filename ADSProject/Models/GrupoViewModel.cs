@@ -11,7 +11,7 @@ namespace ADSProject.Models
     public class GrupoViewModel
     {
         [Key]
-        [Display(Name = "ID Grupo")]
+        [Display(Name = "Id Grupo")]
         public int idGrupo { get; set; }
 
         [Display(Name = "Carrera")]
