@@ -3,6 +3,7 @@ using ADSProject.Repository;
 using ADSProject.Utils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,13 +17,15 @@ namespace ADSProject.Controllers
         private readonly ICarreraRepository carreraRepository;
         private readonly IMateriaRepository materiaRepository;
         private readonly IProfesorRepository profesorRepository;
+        private readonly ILogger<EstudianteController> logger;
 
-        public GrupoController(IGrupoRepository grupoRepository, ICarreraRepository carreraRepository,IMateriaRepository materiaRepository ,IProfesorRepository profesorRepository)
+        public GrupoController(IGrupoRepository grupoRepository, ICarreraRepository carreraRepository,IMateriaRepository materiaRepository ,IProfesorRepository profesorRepository, ILogger<EstudianteController> logger)
         {
             this.grupoRepository = grupoRepository;
             this.carreraRepository = carreraRepository;
             this.materiaRepository = materiaRepository;
             this.profesorRepository = profesorRepository;
+            this.logger = logger;
         }
 
       
@@ -75,20 +78,41 @@ namespace ADSProject.Controllers
         }
 
         [HttpPost]
+        [AutoValidateAntiforgeryToken]
         public IActionResult Form(GrupoViewModel grupoViewModel)
         {
             try
             {
-                if (grupoViewModel.idGrupo == 0) // En caso de insertar
+                if (ModelState.IsValid)
                 {
-                    grupoRepository.agregarGrupo(grupoViewModel);
-                }
-                else // En caso de actualizar
-                {
-                    grupoRepository.actualizarGrupo(grupoViewModel.idGrupo, grupoViewModel);
+
+                    int id = 0;
+                    if (grupoViewModel.idGrupo == 0) // En caso de insertar
+                    {
+                        id = grupoRepository.agregarGrupo(grupoViewModel);
+                    }
+                    else // En caso de actualizar
+                    {
+                        id = grupoRepository.actualizarGrupo(grupoViewModel.idGrupo, grupoViewModel);
+
+                    }
+
+                    if (id > 0)
+                    {
+                        return StatusCode(StatusCodes.Status200OK);
+                    }
+                    else
+                    {
+                        return StatusCode(StatusCodes.Status202Accepted);
+                    }
 
                 }
-                return RedirectToAction("Index");
+                else
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest);
+                }
+
+               // return RedirectToAction("Index");
             }
             catch (Exception)
             {

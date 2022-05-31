@@ -1,6 +1,7 @@
 ﻿using ADSProject.Models;
 using ADSProject.Repository;
 using ADSProject.Utils;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -54,19 +55,39 @@ namespace ADSProject.Controllers
             }
         }
         [HttpPost]
+        [AutoValidateAntiforgeryToken]
         public IActionResult Form(CarreraViewModel carreraViewModel)
         {
             try
             {
-                if (carreraViewModel.idCarrera == 0) // En caso de insertar
+                if (ModelState.IsValid)
                 {
-                    carreraRepository.agregarCarrera(carreraViewModel);
+
+                    int id = 0;
+                    if (carreraViewModel.idCarrera == 0) // En caso de insertar
+                    {
+                        id = carreraRepository.agregarCarrera(carreraViewModel);
+                    }
+                    else // En caso de actualizar
+                    {
+                       id = carreraRepository.actualizarCarrera(carreraViewModel.idCarrera, carreraViewModel);
+                    }
+
+                    if (id > 0)
+                    {
+                        return StatusCode(StatusCodes.Status200OK);
+                    }
+                    else
+                    {
+                        return StatusCode(StatusCodes.Status202Accepted);
+                    }
+
                 }
-                else // En caso de actualizar
+                else
                 {
-                    carreraRepository.actualizarCarrera(carreraViewModel.idCarrera, carreraViewModel);
+                    return StatusCode(StatusCodes.Status400BadRequest);
                 }
-                return RedirectToAction("Index");
+                //return RedirectToAction("Index");
             }
             catch (Exception)
             {

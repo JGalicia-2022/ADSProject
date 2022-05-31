@@ -1,7 +1,9 @@
 ﻿using ADSProject.Models;
 using ADSProject.Repository;
 using ADSProject.Utils;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,11 +15,13 @@ namespace ADSProject.Controllers
     {
         private readonly IMateriaRepository materiaRepository;
         private readonly ICarreraRepository carreraRepository;
+        private readonly ILogger<EstudianteController> logger;
 
-        public MateriaController(IMateriaRepository materiaRepository, ICarreraRepository carreraRepository)
+        public MateriaController(IMateriaRepository materiaRepository, ICarreraRepository carreraRepository, ILogger<EstudianteController> logger)
         {
             this.materiaRepository = materiaRepository;
             this.carreraRepository = carreraRepository;
+            this.logger = logger;
         }
 
         [HttpGet]
@@ -59,21 +63,39 @@ namespace ADSProject.Controllers
             }
         }
         [HttpPost]
+        [AutoValidateAntiforgeryToken]
         public IActionResult Form(MateriaViewModel materiaViewModel)
         {
             try
             {
-                if (materiaViewModel.idMateria == 0) // En caso de insertar
+                if (ModelState.IsValid)
                 {
-                    materiaRepository.agregarMateria(materiaViewModel);
+                    int id = 0;
+                    if (materiaViewModel.idMateria == 0) // En caso de insertar
+                    {
+                        id = materiaRepository.agregarMateria(materiaViewModel);
+                    }
+                    else // En caso de actualizar
+                    {
+                       id = materiaRepository.actualizarMateria
+                            (materiaViewModel.idMateria, materiaViewModel);
+                    }
+
+                    if (id > 0)
+                    {
+                        return StatusCode(StatusCodes.Status200OK);
+                    }
+                    else
+                    {
+                        return StatusCode(StatusCodes.Status202Accepted);
+                    }
                 }
-                else // En caso de actualizar
+                else
                 {
-                    materiaRepository.actualizarMateria
-                        (materiaViewModel.idMateria, materiaViewModel);
+                    return StatusCode(StatusCodes.Status400BadRequest);
                 }
 
-                return RedirectToAction("Index");
+               // return RedirectToAction("Index");
             }
             catch (Exception)
             {

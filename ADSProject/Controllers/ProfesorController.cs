@@ -7,16 +7,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace ADSProject.Controllers
 {
     public class ProfesorController : Controller
     {
         private readonly IProfesorRepository profesorRepository;
+        private readonly ILogger<EstudianteController> logger;
 
-        public ProfesorController(IProfesorRepository profesorRepository)
+        public ProfesorController(IProfesorRepository profesorRepository, ILogger<EstudianteController> logger)
         {
             this.profesorRepository = profesorRepository;
+            this.logger = logger;
         }
 
         [HttpGet]
@@ -54,20 +58,38 @@ namespace ADSProject.Controllers
             }
         }
         [HttpPost]
-
+        [AutoValidateAntiforgeryToken]
         public IActionResult Form (ProfesorViewModel profesorViewModel)
         {
             try
             {
-                if (profesorViewModel.idProfesor == 0)
+                if (ModelState.IsValid)
                 {
-                    profesorRepository.agregarProfesor(profesorViewModel);
+                    int id = 0;
+                    if (profesorViewModel.idProfesor == 0)
+                    {
+                       id = profesorRepository.agregarProfesor(profesorViewModel);
+                    }
+                    else
+                    {
+                       id = profesorRepository.actualizarProfesor(profesorViewModel.idProfesor, profesorViewModel);
+                    }
+
+                    if (id > 0)
+                    {
+                        return StatusCode(StatusCodes.Status200OK);
+                    }
+                    else
+                    {
+                        return StatusCode(StatusCodes.Status202Accepted);
+                    }
+
                 }
                 else
                 {
-                    profesorRepository.actualizarProfesor(profesorViewModel.idProfesor, profesorViewModel);
+                    return StatusCode(StatusCodes.Status400BadRequest);
                 }
-                return RedirectToAction("Index");
+                // return RedirectToAction("Index");
             }
             catch (Exception)
             {
